@@ -1,0 +1,10 @@
+= CSV DB
+
+Es soll eine Datenbank basierend auf CSV Dateien erstellt werden.
+Folgende usecases sollen erfüllt werden:
+
+Es sollen beliebige aber bekannte Objekte (POJOs) abgespeichert werden können.
+Es wird beispielhaft ein Objekt vom Typ Address gespeichert.
+
+Es sollen alle gespeicherten Objekte geladen werden können.
+Es soll ein Objekt mit der gegebenen GUID gespeichert werden können.
