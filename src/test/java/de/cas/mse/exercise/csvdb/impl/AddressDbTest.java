@@ -1,11 +1,10 @@
 package de.cas.mse.exercise.csvdb.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
-import java.nio.file.Files;
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,15 +13,12 @@ import de.cas.mse.exercise.csvdb.data.Address;
 public class AddressDbTest {
 
 	private AddressDb addressDb;
+	private AddressIOInMemory memoryDb;
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
-	}
-
-	@After
-	public void teardown() {
-		addressDb.determineTableFile().toFile().delete();
+		memoryDb = new AddressIOInMemory();
+		addressDb = new AddressDb(memoryDb);
 	}
 
 	@Test
@@ -35,9 +31,9 @@ public class AddressDbTest {
 
 		addressDb.insert(a);
 
-		final List<String> fileLines = Files.readAllLines(addressDb.determineTableFile());
+		final List<List<String>> fileLines = memoryDb.loadAllAddresses();
 		assertEquals(1, fileLines.size());
-		assertEquals(addressDb.toCsvLine(a), fileLines.get(0));
+		assertThat(fileLines.get(0)).containsExactlyElementsOf(addressDb.convertToList(a));
 	}
 
 }
