@@ -1,10 +1,5 @@
 = CSV DB
 
 Es soll eine Datenbank basierend auf CSV Dateien erstellt werden.
-Folgende usecases sollen erfüllt werden:
-
-Es sollen beliebige aber bekannte Objekte (POJOs) abgespeichert werden können.
-Es wird beispielhaft ein Objekt vom Typ Address gespeichert.
-
-Es sollen alle gespeicherten Objekte geladen werden können.
-Es soll ein Objekt mit der gegebenen GUID gespeichert werden können.
+Damit wir Tests schreiben können ist es jedoch ungünstig direkt in Dateien zu schreiben.
+Es soll eine Abstraktion für die Persistenz der CSV-Daten eingeführt werden, um einen in-memory Ansatz für die Tests schreiben zu können
