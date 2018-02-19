@@ -13,16 +13,20 @@ import de.cas.mse.exercise.csvdb.data.Address;
 
 public class AddressDbTest {
 
-	private AddressDb addressDb;
+	private GenericDb addressDb;
+	private AddressConverter addressConverter;
+	private FileBackend fileBackend;
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
+		fileBackend = new FileBackend("Address.csv");
+		addressConverter = new AddressConverter();
+		addressDb = new GenericDb(addressConverter, fileBackend);
 	}
 
 	@After
 	public void teardown() {
-		addressDb.determineTableFile().toFile().delete();
+		fileBackend.determineTableFile().toFile().delete();
 	}
 
 	@Test
@@ -35,9 +39,9 @@ public class AddressDbTest {
 
 		addressDb.insert(a);
 
-		final List<String> fileLines = Files.readAllLines(addressDb.determineTableFile());
+		final List<String> fileLines = Files.readAllLines(fileBackend.determineTableFile());
 		assertEquals(1, fileLines.size());
-		assertEquals(addressDb.toCsvLine(a), fileLines.get(0));
+		assertEquals(addressConverter.convertToDbEntry(a), fileLines.get(0));
 	}
 
 }
