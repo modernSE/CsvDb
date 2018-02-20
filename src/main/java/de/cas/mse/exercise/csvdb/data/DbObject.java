@@ -4,4 +4,5 @@ public interface DbObject {
 
 	public String getGuid();
 	public void setGuid(String guid);
+	public String getElementsAsString(String separator);
 }

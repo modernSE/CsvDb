@@ -48,4 +48,10 @@ public class Address implements DbObject {
 	public void setTown(final String town) {
 		this.town = town;
 	}
+
+	@Override
+	public String getElementsAsString(String separator) {
+		return getGuid() + separator + getName() + separator + getStreet()
+		+ separator + getZip() + separator + getTown();
+	}
 }
