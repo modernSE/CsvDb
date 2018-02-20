@@ -17,6 +17,7 @@ public class AddressDb extends AbstractDb<Address> {
 		return addressObject;
 	}
 
+	//determineTableFile (Name?) am besten in die Superklasse (zumindest Deklaration)
 	protected Path determineTableFile() {
 		return basePath.resolve("Address.csv");
 	}
