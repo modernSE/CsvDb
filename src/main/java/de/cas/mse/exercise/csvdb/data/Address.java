@@ -48,4 +48,23 @@ public class Address implements DbObject {
 	public void setTown(final String town) {
 		this.town = town;
 	}
+
+	@Override
+	public DbObject convertFromCsv(String csvLine, String csvSeparator) {
+		final String[] split = csvLine.split(csvSeparator);
+		Address address = new Address();
+		address.setGuid(split[0]);
+		address.setName(split[1]);
+		address.setStreet(split[2]);
+		address.setZip(split[3]);
+		address.setTown(split[4]);
+		
+		return address;
+	}
+
+	@Override
+	public String toCsvLine(String csvSeparator) {
+		return getGuid() + csvSeparator + getName() + csvSeparator + getStreet()
+		+ csvSeparator + getZip() + csvSeparator + getTown();
+	}
 }

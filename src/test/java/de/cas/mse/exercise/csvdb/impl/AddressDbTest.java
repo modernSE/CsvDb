@@ -13,11 +13,11 @@ import de.cas.mse.exercise.csvdb.data.Address;
 
 public class AddressDbTest {
 
-	private AddressDb addressDb;
+	private Db addressDb;
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
+		addressDb = new Db();
 	}
 
 	@After
