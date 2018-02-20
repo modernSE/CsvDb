@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import de.cas.mse.exercise.csvdb.CsvDB;
 import de.cas.mse.exercise.csvdb.data.DbObject;
 
+//Namen CSVDB und AbstractDb vertauschen. Diskussion: Composition oder Inheritance
 public abstract class AbstractDb<T extends DbObject> implements CsvDB<T> {
 
 	protected static final String CSV_SEPARATOR = ",";
@@ -57,6 +58,7 @@ public abstract class AbstractDb<T extends DbObject> implements CsvDB<T> {
 		}
 	}
 
+	
 	private String createGuid() {
 		return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
 	}
