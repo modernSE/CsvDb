@@ -1,6 +1,7 @@
 package de.cas.mse.exercise.csvdb.data;
 
 public class Address implements DbObject {
+	
 	private String guid;
 	private String name;
 	private String street;
@@ -48,4 +49,13 @@ public class Address implements DbObject {
 	public void setTown(final String town) {
 		this.town = town;
 	}
+
+	@Override
+	public String toCsvLine() {
+		return getGuid() + CSV_SEPARATOR + getName() + CSV_SEPARATOR + getStreet()
+		+ CSV_SEPARATOR + getZip() + CSV_SEPARATOR + getTown();
+	}
+
+
+
 }

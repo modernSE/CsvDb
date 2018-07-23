@@ -1,7 +1,12 @@
 package de.cas.mse.exercise.csvdb.data;
 
 public interface DbObject {
-
-	public String getGuid();
-	public void setGuid(String guid);
+	
+	static final String CSV_SEPARATOR = ",";
+	
+	String getGuid();
+	
+	void setGuid(String guid);
+	
+	String toCsvLine();
 }
