@@ -10,16 +10,16 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import de.cas.mse.exercise.csvdb.CsvDB;
+import de.cas.mse.exercise.csvdb.ObjectDb;
 import de.cas.mse.exercise.csvdb.data.Address;
 
-public class AddressDb implements CsvDB<Address> {
+public class AddressDb implements ObjectDb<Address> {
 
-	private static final String CSV_SEPARATOR = ",";
-	protected final Path basePath = Paths.get("data").toAbsolutePath();
+private DataAccessor da;
 
 	@Override
 	public Address loadObject(final String guid, final Class<Address> type) {
+
 		final Path tableFile = determineTableFile();
 		try {
 			final List<String> lines = Files.readAllLines(tableFile);
@@ -72,14 +72,9 @@ public class AddressDb implements CsvDB<Address> {
 		}
 	}
 
-	protected String toCsvLine(final Address address) {
-		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
-				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
-	}
 
-	protected Path determineTableFile() {
-		return basePath.resolve("Address.csv");
-	}
+
+
 
 	private String createGuid() {
 		return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
