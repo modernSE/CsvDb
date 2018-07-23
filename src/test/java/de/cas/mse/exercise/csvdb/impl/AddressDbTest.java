@@ -17,7 +17,7 @@ public class AddressDbTest {
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
+		addressDb = new AddressDb(DataStorage.FILE);
 	}
 
 	@After

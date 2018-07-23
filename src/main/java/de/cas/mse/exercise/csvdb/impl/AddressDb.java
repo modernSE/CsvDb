@@ -5,6 +5,7 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,25 +13,39 @@ import java.util.stream.Collectors;
 
 import de.cas.mse.exercise.csvdb.CsvDB;
 import de.cas.mse.exercise.csvdb.data.Address;
+import de.cas.mse.exercise.csvdb.data.DbObject;
 
-public class AddressDb implements CsvDB<Address> {
+// keine spezielle addressDb, sondern allgemein
+public class AddressDb implements CsvDB<DbObject> {
 
 	private static final String CSV_SEPARATOR = ",";
 	protected final Path basePath = Paths.get("data").toAbsolutePath();
+	private HashMap<String, DbObject> data = new HashMap<>();
+	private DataStorage storageType;
+	private DbObjectToSpecificTypeFactory factory;
+
+	public AddressDb(DataStorage storageType) {
+		this.storageType = storageType;
+		this.factory = new DbObjectToSpecificTypeFactory();
+	}
 
 	@Override
-	public Address loadObject(final String guid, final Class<Address> type) {
+	public DbObject loadObject(final String guid, final Class<DbObject> type) {
 		final Path tableFile = determineTableFile();
 		try {
 			final List<String> lines = Files.readAllLines(tableFile);
 			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
-			return turnToAddress(
-					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
+			String foundLine = matchedAddress
+					.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found"));
+			//DbObject objectToLoad = factory.createDbObjectWithSpecificType(foundLine, type);
+			return turnToAddress(foundLine);
+
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
+	// Generischer return für Objecte
 	private Address turnToAddress(final String addressLine) {
 		final String[] split = addressLine.split(CSV_SEPARATOR);
 		final Address addressObject = new Address();
@@ -43,7 +58,7 @@ public class AddressDb implements CsvDB<Address> {
 	}
 
 	@Override
-	public List<Address> loadAllObjects(final Class<Address> type) {
+	public List<DbObject> loadAllObjects(final Class<DbObject> type) {
 		final Path tableFile = determineTableFile();
 		try {
 			final List<String> lines = Files.readAllLines(tableFile);
@@ -53,26 +68,51 @@ public class AddressDb implements CsvDB<Address> {
 		}
 	}
 
+	/* insert-Verhalten lässt sich verallgemeinern 
+	--> Verhaltensinterface, das durch verschiedene Verhaltensklassen implementiert werden kann*/
 	@Override
-	public Address insert(final Address address) {
+	public DbObject insert(final DbObject address) {
 		setGuidIfNeeded(address);
+		if (storageType == DataStorage.FILE) {
+			return insertInFile(address);
+		}
+
+		if (storageType == DataStorage.INMEMORY) {
+			return insertInMemory(address);
+		}
+
+		if (storageType == DataStorage.DATABASE) {
+			return null;
+		}
+
+		return null;
+
+	}
+
+	private DbObject insertInMemory(DbObject address) {
+		return data.put(address.getGuid(), address);
+	}
+
+	private DbObject insertInFile(DbObject address) {
 		final Path tableFile = determineTableFile();
 		try (final RandomAccessFile file = new RandomAccessFile(tableFile.toFile(), "rw")) {
 			file.seek(file.length());
-			file.writeBytes(toCsvLine(address));
+			file.writeBytes(toCsvLine((Address) address));
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 		return address;
 	}
 
-	private void setGuidIfNeeded(final Address address) {
+	private void setGuidIfNeeded(final DbObject address) {
 		if (address.getGuid() == null) {
 			address.setGuid(createGuid());
 		}
 	}
-
+	
+	// generisch
 	protected String toCsvLine(final Address address) {
+
 		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
 				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
 	}
