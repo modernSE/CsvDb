@@ -13,11 +13,11 @@ import de.cas.mse.exercise.csvdb.data.Address;
 
 public class AddressDbTest {
 
-	private AddressDb addressDb;
+	private CsvDb addressDb;
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
+		addressDb = new CsvDb();
 	}
 
 	@After
@@ -37,7 +37,7 @@ public class AddressDbTest {
 
 		final List<String> fileLines = Files.readAllLines(addressDb.determineTableFile());
 		assertEquals(1, fileLines.size());
-		assertEquals(addressDb.toCsvLine(a), fileLines.get(0));
+		assertEquals("test,str,ort,23553", fileLines.get(0));
 	}
 
 }

@@ -5,76 +5,79 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import de.cas.mse.exercise.csvdb.CsvDB;
+import javax.xml.ws.soap.AddressingFeature;
+
+import de.cas.mse.exercise.csvdb.ObjectDB;
 import de.cas.mse.exercise.csvdb.data.Address;
+import de.cas.mse.exercise.csvdb.data.AddressConverter;
+import de.cas.mse.exercise.csvdb.data.ArugmentsReceiver;
+import de.cas.mse.exercise.csvdb.data.CsvReceiver;
+import de.cas.mse.exercise.csvdb.data.DbObject;
 
-public class AddressDb implements CsvDB<Address> {
+public class CsvDb<T extends DbObject> implements ObjectDB<T> {
+	
+	private final Map<Class<?>, Converter<?>> converters = new HashMap<>();
 
-	private static final String CSV_SEPARATOR = ",";
+	
+
 	protected final Path basePath = Paths.get("data").toAbsolutePath();
 
+	public CsvDb() {
+		converters.put(Address.class, new AddressConverter());
+	}
+	
 	@Override
-	public Address loadObject(final String guid, final Class<Address> type) {
+	public T loadObject(final String guid, final Class<T> type) {
 		final Path tableFile = determineTableFile();
 		try {
 			final List<String> lines = Files.readAllLines(tableFile);
 			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
-			return turnToAddress(
-					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
+			
+			Converter<T> converter = (Converter<T>) converters.get(type);
+			return converter.convertToDbObject(matchedAddress.get());
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private Address turnToAddress(final String addressLine) {
-		final String[] split = addressLine.split(CSV_SEPARATOR);
-		final Address addressObject = new Address();
-		addressObject.setGuid(split[0]);
-		addressObject.setName(split[1]);
-		addressObject.setStreet(split[2]);
-		addressObject.setZip(split[3]);
-		addressObject.setTown(split[4]);
-		return addressObject;
-	}
-
 	@Override
-	public List<Address> loadAllObjects(final Class<Address> type) {
+	public List<T> loadAllObjects(final Class<T> type) {
 		final Path tableFile = determineTableFile();
 		try {
 			final List<String> lines = Files.readAllLines(tableFile);
-			return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
+			Converter<T> converter = (Converter<T>) converters.get(type);
+			return lines.stream().map(e -> converter.convertToDbObject(e)).collect(Collectors.toList());
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
-	public Address insert(final Address address) {
+	public T insert(final T address) {
 		setGuidIfNeeded(address);
 		final Path tableFile = determineTableFile();
 		try (final RandomAccessFile file = new RandomAccessFile(tableFile.toFile(), "rw")) {
 			file.seek(file.length());
-			file.writeBytes(toCsvLine(address));
+			Converter<T> converter = (Converter<T>) converters.get(address.getClass());
+			String string = converter.convertToString(address);
+			file.writeBytes(string);
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 		return address;
 	}
 
-	private void setGuidIfNeeded(final Address address) {
+	private void setGuidIfNeeded(final T address) {
 		if (address.getGuid() == null) {
 			address.setGuid(createGuid());
 		}
-	}
-
-	protected String toCsvLine(final Address address) {
-		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
-				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
 	}
 
 	protected Path determineTableFile() {
