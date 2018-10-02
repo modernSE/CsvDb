@@ -16,22 +16,24 @@ import de.cas.mse.exercise.csvdb.data.Address;
 public class AddressDb implements CsvDB<Address> {
 
 	private static final String CSV_SEPARATOR = ",";
-	protected final Path basePath = Paths.get("data").toAbsolutePath();
 
 	@Override
 	public Address loadObject(final String guid, final Class<Address> type) {
+		// path belongs to file storage and not to DB
 		final Path tableFile = determineTableFile();
 		try {
+			// Lesevorgang in eine Storage Klasse auslagern
 			final List<String> lines = Files.readAllLines(tableFile);
 			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
-			return turnToAddress(
+			return deserialize(
 					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private Address turnToAddress(final String addressLine) {
+	// deserialize belongs to dbObject (or alternativly PersistenceLayer) but not the DB
+	public Address deserialize(String addressLine) {
 		final String[] split = addressLine.split(CSV_SEPARATOR);
 		final Address addressObject = new Address();
 		addressObject.setGuid(split[0]);
@@ -43,20 +45,11 @@ public class AddressDb implements CsvDB<Address> {
 	}
 
 	@Override
-	public List<Address> loadAllObjects(final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
-			return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@Override
 	public Address insert(final Address address) {
 		setGuidIfNeeded(address);
 		final Path tableFile = determineTableFile();
+		
+		// Schreibvorgang in eine Storage Klasse auslagern
 		try (final RandomAccessFile file = new RandomAccessFile(tableFile.toFile(), "rw")) {
 			file.seek(file.length());
 			file.writeBytes(toCsvLine(address));
@@ -72,17 +65,20 @@ public class AddressDb implements CsvDB<Address> {
 		}
 	}
 
-	protected String toCsvLine(final Address address) {
-		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
-				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
-	}
-
-	protected Path determineTableFile() {
+	public Path determineTableFile() {
+		// ggf. Dateinamen auch direkt im Konstruktor definieren
 		return basePath.resolve("Address.csv");
 	}
 
 	private String createGuid() {
 		return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
+	}
+
+
+	@Override
+	public List<Address> loadAllObjects(Class<Address> type) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
