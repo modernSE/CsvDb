@@ -17,18 +17,31 @@ public class AddressDb implements CsvDB<Address> {
 
 	private static final String CSV_SEPARATOR = ",";
 	protected final Path basePath = Paths.get("data").toAbsolutePath();
+	
+	private DataObject dataSource;
+	
+	public AddressDb(DataObject dataSource) {
+		this.dataSource = dataSource;
+	}
 
 	@Override
 	public Address loadObject(final String guid, final Class<Address> type) {
+		final List<String> lines = createAddressLines();
+		final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
+		return turnToAddress(
+				matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
+	}
+	
+	private List<String> createAddressLines(){
+		
 		final Path tableFile = determineTableFile();
 		try {
-			final List<String> lines = Files.readAllLines(tableFile);
-			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
-			return turnToAddress(
-					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
+			return Files.readAllLines(tableFile);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	private Address turnToAddress(final String addressLine) {
@@ -64,6 +77,10 @@ public class AddressDb implements CsvDB<Address> {
 			e.printStackTrace();
 		}
 		return address;
+	}
+	
+	private void insertIntoFile(final RandomAccessFile file) {
+		
 	}
 
 	private void setGuidIfNeeded(final Address address) {
