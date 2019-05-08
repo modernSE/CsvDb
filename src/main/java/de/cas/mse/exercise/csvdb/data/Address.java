@@ -48,4 +48,9 @@ public class Address implements DbObject {
 	public void setTown(final String town) {
 		this.town = town;
 	}
+	
+	public String toCsvLine(String csvSeparator) {
+		return getGuid() + csvSeparator + getName() + csvSeparator + getStreet()
+				+ csvSeparator + getZip() + csvSeparator + getTown();
+	}
 }

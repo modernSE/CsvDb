@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.cas.mse.exercise.csvdb.data.Address;
+import de.cas.mse.exercise.csvdb.files.CsvFileParser;
 
 public class AddressDbTest {
 
@@ -17,7 +18,7 @@ public class AddressDbTest {
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
+		addressDb = new AddressDb(new CsvFileParser(","));
 	}
 
 	@After
@@ -37,7 +38,7 @@ public class AddressDbTest {
 
 		final List<String> fileLines = Files.readAllLines(addressDb.determineTableFile());
 		assertEquals(1, fileLines.size());
-		assertEquals(addressDb.toCsvLine(a), fileLines.get(0));
+		assertEquals(a.toCsvLine(","), fileLines.get(0));
 	}
 
 }
