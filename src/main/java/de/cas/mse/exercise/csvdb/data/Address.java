@@ -48,4 +48,8 @@ public class Address implements DbObject {
 	public void setTown(final String town) {
 		this.town = town;
 	}
+	
+	   public boolean startsWith(String prefix) {
+	        return guid.equals(prefix);
+	    }
 }
