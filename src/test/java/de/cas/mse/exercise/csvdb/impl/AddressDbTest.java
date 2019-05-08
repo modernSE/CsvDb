@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.cas.mse.exercise.csvdb.data.Address;
+import de.cas.mse.exercise.csvdb.data.InMemoryDB;
 
 public class AddressDbTest {
 
@@ -17,7 +18,8 @@ public class AddressDbTest {
 
 	@Before
 	public void setup() {
-		addressDb = new AddressDb();
+		InMemoryDB db = new InMemoryDB("Adress.csv", ",");
+		addressDb = new AddressDb(db);
 	}
 
 	@After

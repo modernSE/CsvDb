@@ -12,27 +12,26 @@ import java.util.stream.Collectors;
 
 import de.cas.mse.exercise.csvdb.CsvDB;
 import de.cas.mse.exercise.csvdb.data.Address;
+import de.cas.mse.exercise.csvdb.data.DataSource;
 
 public class AddressDb implements CsvDB<Address> {
 
-	private static final String CSV_SEPARATOR = ",";
-	protected final Path basePath = Paths.get("data").toAbsolutePath();
+	private DataSource source;
+	public AddressDb(DataSource source) {
+		this.source = source;
+	}
 
 	@Override
 	public Address loadObject(final String guid, final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
-			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
-			return turnToAddress(
-					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
+//		final Path tableFile = determineTableFile();
+		final List<String> lines = source.readAllLines();
+		final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
+		return turnToAddress(
+				matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
 	}
 
 	private Address turnToAddress(final String addressLine) {
-		final String[] split = addressLine.split(CSV_SEPARATOR);
+		final String[] split = addressLine.split(source.getSeparator());
 		final Address addressObject = new Address();
 		addressObject.setGuid(split[0]);
 		addressObject.setName(split[1]);
@@ -44,13 +43,9 @@ public class AddressDb implements CsvDB<Address> {
 
 	@Override
 	public List<Address> loadAllObjects(final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
-			return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
+//		final Path tableFile = determineTableFile();
+		final List<String> lines = source.readAllLines();
+		return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
 	}
 
 	@Override
@@ -73,12 +68,12 @@ public class AddressDb implements CsvDB<Address> {
 	}
 
 	protected String toCsvLine(final Address address) {
-		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
-				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
+		return address.getGuid() + source.getSeparator() + address.getName() + source.getSeparator() + address.getStreet()
+				+ source.getSeparator() + address.getZip() + source.getSeparator() + address.getTown();
 	}
 
 	protected Path determineTableFile() {
-		return basePath.resolve("Address.csv");
+		return Paths.get((source.getPath()));
 	}
 
 	private String createGuid() {
