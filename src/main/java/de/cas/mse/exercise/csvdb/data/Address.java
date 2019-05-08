@@ -1,5 +1,7 @@
 package de.cas.mse.exercise.csvdb.data;
 
+import java.util.UUID;
+
 public class Address implements DbObject {
 	private String guid;
 	private String name;
@@ -9,6 +11,8 @@ public class Address implements DbObject {
 
 	@Override
 	public String getGuid() {
+		if (guid == null)
+			guid = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
 		return guid;
 	}
 
@@ -47,5 +51,16 @@ public class Address implements DbObject {
 
 	public void setTown(final String town) {
 		this.town = town;
+	}
+	
+	// TODO: refactoring
+	private String createGuid() {
+		return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
+	}
+	
+	public void setGuidIfNeeded() {
+		if (this.getGuid() == null) {
+			this.setGuid(createGuid());
+		}
 	}
 }

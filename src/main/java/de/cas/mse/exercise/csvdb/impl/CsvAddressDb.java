@@ -10,13 +10,19 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import de.cas.mse.exercise.csvdb.CsvDB;
+import de.cas.mse.exercise.csvdb.Database;
 import de.cas.mse.exercise.csvdb.data.Address;
 
-public class AddressDb implements CsvDB<Address> {
+public class CsvAddressDb implements Database<Address> {
 
 	private static final String CSV_SEPARATOR = ",";
 	protected final Path basePath = Paths.get("data").toAbsolutePath();
+	
+	private CsvStorage backend;
+	
+	public CsvAddressDb(CsvStorage backend) {
+		this.backend = backend;
+	}
 
 	@Override
 	public Address loadObject(final String guid, final Class<Address> type) {
@@ -55,7 +61,7 @@ public class AddressDb implements CsvDB<Address> {
 
 	@Override
 	public Address insert(final Address address) {
-		setGuidIfNeeded(address);
+		address.setGuidIfNeeded();
 		final Path tableFile = determineTableFile();
 		try (final RandomAccessFile file = new RandomAccessFile(tableFile.toFile(), "rw")) {
 			file.seek(file.length());
@@ -66,12 +72,6 @@ public class AddressDb implements CsvDB<Address> {
 		return address;
 	}
 
-	private void setGuidIfNeeded(final Address address) {
-		if (address.getGuid() == null) {
-			address.setGuid(createGuid());
-		}
-	}
-
 	protected String toCsvLine(final Address address) {
 		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
 				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
@@ -79,10 +79,6 @@ public class AddressDb implements CsvDB<Address> {
 
 	protected Path determineTableFile() {
 		return basePath.resolve("Address.csv");
-	}
-
-	private String createGuid() {
-		return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
 	}
 
 }
