@@ -1,5 +1,0 @@
-= CSV DB
-
-Es soll eine Datenbank basierend auf CSV Dateien erstellt werden.
-Damit wir Tests schreiben können ist es jedoch ungünstig direkt in Dateien zu schreiben.
-Es soll eine Abstraktion für die Persistenz der CSV-Daten eingeführt werden, um einen in-memory Ansatz für die Tests schreiben zu können
