@@ -12,23 +12,24 @@ import java.util.stream.Collectors;
 
 import de.cas.mse.exercise.csvdb.CsvDB;
 import de.cas.mse.exercise.csvdb.data.Address;
+import de.cas.mse.exercise.csvdb.persistence.CsvSource;
 
 public class AddressDb implements CsvDB<Address> {
 
 	private static final String CSV_SEPARATOR = ",";
-	protected final Path basePath = Paths.get("data").toAbsolutePath();
+    protected final Path basePath = Paths.get("data").toAbsolutePath();
+    private CsvSource csvSource;
+    
+    public AddressDb(CsvSource csvSource) {
+        this.csvSource = csvSource;
+    }
 
 	@Override
-	public Address loadObject(final String guid, final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
+	public Address loadObject(final String guid, final Class<Address> type) {				
+			final List<String> lines = csvSource.readAllLines();
 			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
 			return turnToAddress(
-					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
+					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));		
 	}
 
 	private Address turnToAddress(final String addressLine) {
@@ -44,25 +45,16 @@ public class AddressDb implements CsvDB<Address> {
 
 	@Override
 	public List<Address> loadAllObjects(final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
+		
+			final List<String> lines = csvSource.readAllLines();
 			return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
+
 	}
 
 	@Override
 	public Address insert(final Address address) {
 		setGuidIfNeeded(address);
-		final Path tableFile = determineTableFile();
-		try (final RandomAccessFile file = new RandomAccessFile(tableFile.toFile(), "rw")) {
-			file.seek(file.length());
-			file.writeBytes(toCsvLine(address));
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
+        csvSource.insertLine(toCsvLine(address));		
 		return address;
 	}
 
