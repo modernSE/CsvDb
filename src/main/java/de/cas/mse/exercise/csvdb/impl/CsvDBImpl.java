@@ -14,18 +14,20 @@ import de.cas.mse.exercise.csvdb.CsvDB;
 import de.cas.mse.exercise.csvdb.data.Address;
 import de.cas.mse.exercise.csvdb.persistence.CsvSource;
 
-public class AddressDb implements CsvDB<Address> {
+public class CsvDBImpl<T extends DbObject> implements CsvDB<T> {
 
 	private static final String CSV_SEPARATOR = ",";
     protected final Path basePath = Paths.get("data").toAbsolutePath();
     private CsvSource csvSource;
+    private Class<T> itemType;
     
-    public AddressDb(CsvSource csvSource) {
+    public AddressDb(CsvSource csvSource, Class<T> itemType) {
         this.csvSource = csvSource;
+        this.itemType = itemType;
     }
 
 	@Override
-	public Address loadObject(final String guid, final Class<Address> type) {				
+	public T loadObject(final String guid, final Class<T> type) {				
 			final List<String> lines = csvSource.readAllLines();
 			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
 			return turnToAddress(
@@ -44,7 +46,7 @@ public class AddressDb implements CsvDB<Address> {
 	}
 
 	@Override
-	public List<Address> loadAllObjects(final Class<Address> type) {
+	public List<T> loadAllObjects(final Class<T> type) {
 		
 			final List<String> lines = csvSource.readAllLines();
 			return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
@@ -52,19 +54,29 @@ public class AddressDb implements CsvDB<Address> {
 	}
 
 	@Override
-	public Address insert(final Address address) {
+	public T insert(final T address) {
 		setGuidIfNeeded(address);
         csvSource.insertLine(toCsvLine(address));		
 		return address;
 	}
 
-	private void setGuidIfNeeded(final Address address) {
+	private void setGuidIfNeeded(final T address) {
 		if (address.getGuid() == null) {
 			address.setGuid(createGuid());
 		}
 	}
 
-	protected String toCsvLine(final Address address) {
+	protected String toCsvLine(final T item) {
+        String line = "";
+        var fields = itemType.getFields();
+        for (int i = 0; i < fields.lenght; i++) {
+            var field = fields[i];
+            var value = field.get(item);
+            if (i > 0) {
+                line = line + CSV_SEPARATOR;
+            }
+            line = line + value;
+        }
 		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
 				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
 	}
