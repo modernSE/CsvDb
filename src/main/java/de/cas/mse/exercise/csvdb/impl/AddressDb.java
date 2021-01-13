@@ -9,80 +9,68 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import de.cas.mse.exercise.csvdb.CsvDB;
+import de.cas.mse.exercise.csvdb.PersistenceLayer;
+import de.cas.mse.exercise.csvdb.Record;
 import de.cas.mse.exercise.csvdb.data.Address;
 
-public class AddressDb implements CsvDB<Address> {
+public class AddressDb<T extends PersistenceLayer> implements CsvDB<Address> {
 
-	private static final String CSV_SEPARATOR = ",";
-	protected final Path basePath = Paths.get("data").toAbsolutePath();
+    private final T persistenceLayer;
 
-	@Override
-	public Address loadObject(final String guid, final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
-			final Optional<String> matchedAddress = lines.stream().filter(e -> e.startsWith(guid)).findAny();
-			return turnToAddress(
-					matchedAddress.orElseThrow(() -> new RuntimeException("address with guid " + guid + "not found")));
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    public AddressDb(final T persistenceLayer) {
+        this.persistenceLayer = persistenceLayer;
+    }
 
-	private Address turnToAddress(final String addressLine) {
-		final String[] split = addressLine.split(CSV_SEPARATOR);
-		final Address addressObject = new Address();
-		addressObject.setGuid(split[0]);
-		addressObject.setName(split[1]);
-		addressObject.setStreet(split[2]);
-		addressObject.setZip(split[3]);
-		addressObject.setTown(split[4]);
-		return addressObject;
-	}
+    @Override
+    public Address loadObject(final String guid, final Class<Address> type) {
+        List<Address> addresses = persistenceLayer.getAllRecords().map(it -> turnToAddress(it))
+                .collect(Collectors.toList());
+        Optional<Address> matchingAddress = addresses.stream().filter(it -> it.getGuid().equals(guid)).findFirst();
+        if (addresses.isEmpty())
+            throw new RuntimeException("address with guid " + guid + "not found");
+        return matchingAddress.get();
+    }
 
-	@Override
-	public List<Address> loadAllObjects(final Class<Address> type) {
-		final Path tableFile = determineTableFile();
-		try {
-			final List<String> lines = Files.readAllLines(tableFile);
-			return lines.stream().map(e -> turnToAddress(e)).collect(Collectors.toList());
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    private Address turnToAddress(final Record record) {
+        final Address addressObject = new Address();
+        addressObject.setGuid(record.fields[0]);
+        addressObject.setName(record.fields[1]);
+        addressObject.setStreet(record.fields[2]);
+        addressObject.setZip(record.fields[3]);
+        addressObject.setTown(record.fields[4]);
+        return addressObject;
+    }
 
-	@Override
-	public Address insert(final Address address) {
-		setGuidIfNeeded(address);
-		final Path tableFile = determineTableFile();
-		try (final RandomAccessFile file = new RandomAccessFile(tableFile.toFile(), "rw")) {
-			file.seek(file.length());
-			file.writeBytes(toCsvLine(address));
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
-		return address;
-	}
+    private Record turnToRecord(final Address address) {
+        Record result = new Record();
+        result.fields = new String[] { address.getGuid(), address.getName(), address.getStreet(), address.getZip(),
+                address.getTown() };
+        return result;
+    }
 
-	private void setGuidIfNeeded(final Address address) {
-		if (address.getGuid() == null) {
-			address.setGuid(createGuid());
-		}
-	}
+    @Override
+    public List<Address> loadAllObjects(final Class<Address> type) {
+        return persistenceLayer.getAllRecords().map(it -> turnToAddress(it)).collect(Collectors.toList());
+    }
 
-	protected String toCsvLine(final Address address) {
-		return address.getGuid() + CSV_SEPARATOR + address.getName() + CSV_SEPARATOR + address.getStreet()
-				+ CSV_SEPARATOR + address.getZip() + CSV_SEPARATOR + address.getTown();
-	}
+    @Override
+    public Address insert(final Address address) {
+        setGuidIfNeeded(address);
+        persistenceLayer.insert(turnToRecord(address));
+        return address;
+    }
 
-	protected Path determineTableFile() {
-		return basePath.resolve("Address.csv");
-	}
+    private void setGuidIfNeeded(final Address address) {
+        if (address.getGuid() == null) {
+            address.setGuid(createGuid());
+        }
+    }
 
-	private String createGuid() {
-		return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
-	}
+    private String createGuid() {
+        return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
+    }
 
 }
